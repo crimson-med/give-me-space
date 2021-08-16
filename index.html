@@ -5,24 +5,89 @@
 </head>
 
 <body>
-    <canvas width="400" height="400" id="game" style="background-color: black;"></canvas>
+    <div style="display: flex;">
+        <canvas width="400" height="400" id="game" style="background-color: black;"></canvas>
+        <div style="padding: 10px 30px; background-color: rgb(165, 192, 216);">
+            <h1>Debug</h1>
+            <p>Used for debug purposes. Will be removed in final upload</p>
+            <pre id="debug"></pre>
+
+        </div>
+    </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/kontra@7.1.3/kontra.min.js"></script>
 <script>
+    // Helper Script Tag
+    const getRandomInt = (min, max) => {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+</script>
+<script>
+    // Map Handler Script Tag
+    // Generates a random map with some random objects
+    const mapGenerator = (size) => {
+        const randomnessInt = getRandomInt(5, 10)
+        const randomnessPercentage = Math.floor((randomnessInt / 100) * size)
+        let tiles = new Array(size).fill(1)
+        for (let rdm = 0; rdm < randomnessPercentage; rdm++) {
+            const randomIdx = getRandomInt(0, size)
+            tiles[randomIdx] = 2
+        }
+        return tiles
+    }
+    // From map data generate collision (walkable is 0 and collidable is 1)
+    // Tiles are currently 1 and 2 so we just need to sub 1
+    const mapGeneratorCollision = (mapData) => {
+        return mapData.map(e => e - 1)
+    }
+
+    // Display debuggind infos
+    const debug = (val, parseSize = 0) => {
+        if (parseSize === 0) {
+            document.getElementById("debug").innerText = val
+        } else {
+            // Handle new lines when displaying map info
+            document.getElementById("debug").innerText = val.map((e, idx) => {
+                if ((idx + 1) % parseSize === 0) {
+                    return `${e}\n`
+                } else {
+                    return e
+                }
+            }).join("")
+        }
+    }
+</script>
+<script>
+    // Generate a random map
+    let generateMap = mapGenerator(160)
+    // Friendly display of mapGenerator tiles
+    debug(generateMap, 20)
     // Import all thats needed
-    let { GameLoop, Sprite, bindKeys, collides, init, initKeys, keyPressed, randInt, TileEngine } = kontra;
+    let { GameLoop, Sprite, bindKeys, collides, Text, init, initKeys, keyPressed, randInt, TileEngine } = kontra;
     // Init canvas
     let { canvas } = init();
     // Define our character sprite (to replace with proper art)
     let sprite = Sprite({
         x: 0,        // starting x,y position of the sprite
         y: 0,
-        anchor: {x: 0, y: 0},
+        anchor: { x: 0, y: 0 },
         color: 'red',  // fill color of the sprite rectangle
         width: 16,     // width and height of the sprite rectangle
         height: 16,
         dx: 8,          // move the sprite 2px to the right every frame
         dy: 8          // move the sprite 2px to the right every frame
+    });
+    // Set our title
+    let title = Text({
+        text: 'GIVE ME SPACE!',
+        font: '20px Luminari, fantasy',
+        color: 'white',
+        x: 100,
+        y: 200,
+        anchor: { x: 0.5, y: 0.5 },
+        textAlign: 'center'
     });
     // Create a new image
     let img = new Image();
@@ -35,8 +100,8 @@
             tilewidth: 16,
             tileheight: 16,
             // map size in tiles
-            width: 6,
-            height: 5,
+            width: 20,
+            height: 8,
             // tileset object
             tilesets: [{
                 firstgid: 1,
@@ -45,59 +110,47 @@
             // layer object
             layers: [{
                 name: 'ground',
-                data: [
-                    1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1,
-                    1, 1, 2, 2, 1, 1,
-                    1, 1, 2, 2, 1, 1,
-                    1, 1, 1, 1, 1, 1,
-                ]
-            },{
+                data: generateMap
+            }, {
                 name: 'collision',
-                data: [
-                    0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0,
-                    0, 0, 1, 1, 0, 0,
-                    0, 0, 1, 1, 0, 0,
-                    0, 0, 0, 0, 0, 0,
-                ]
+                data: mapGeneratorCollision(generateMap)
             }]
         });
+
         // Add sprite to the tile engine this helps with collisions and more
         tileEngine.addObject(sprite);
 
-
         let loop = GameLoop({  // create the main game loop
-            update: function () { // update the game state
+            update: () => { // update the game state
                 // handle moving around
-                if (keyPressed('left')) {
+                if (keyPressed('left') || keyPressed("a")) {
                     // When going left we need to check the top left corner and the bottom left corner are not entering collision
-                    if(tileEngine.tileAtLayer("collision", {x: sprite.x - 1, y: sprite.y + 1}) === 1 ||
-                    tileEngine.tileAtLayer("collision", {x: sprite.x - 1, y: sprite.y + sprite.height - 1}) === 1) {
+                    if (tileEngine.tileAtLayer("collision", { x: sprite.x - 1, y: sprite.y + 1 }) === 1 ||
+                        tileEngine.tileAtLayer("collision", { x: sprite.x - 1, y: sprite.y + sprite.height - 1 }) === 1) {
                         sprite.x = sprite.x
                     } else {
                         sprite.x = sprite.x - 1;
                     }
                 }
-                if (keyPressed('right')) {
-                    if(tileEngine.tileAtLayer("collision", {x: sprite.x + 1 + sprite.width, y: sprite.y + 1}) === 1 ||
-                    tileEngine.tileAtLayer("collision", {x: sprite.x + 1 + sprite.width, y: sprite.y + sprite.height - 1}) === 1) {
+                if (keyPressed('right') || keyPressed("d")) {
+                    if (tileEngine.tileAtLayer("collision", { x: sprite.x + 1 + sprite.width, y: sprite.y + 1 }) === 1 ||
+                        tileEngine.tileAtLayer("collision", { x: sprite.x + 1 + sprite.width, y: sprite.y + sprite.height - 1 }) === 1) {
                         sprite.x = sprite.x
                     } else {
                         sprite.x = sprite.x + 1;
                     }
                 }
-                if (keyPressed('up')) {
-                    if(tileEngine.tileAtLayer("collision", {x: sprite.x, y: sprite.y - 1}) === 1 ||
-                    tileEngine.tileAtLayer("collision", {x: sprite.x + sprite.width, y: sprite.y - 1}) === 1) {
+                if (keyPressed('up') || keyPressed("w")) {
+                    if (tileEngine.tileAtLayer("collision", { x: sprite.x, y: sprite.y - 1 }) === 1 ||
+                        tileEngine.tileAtLayer("collision", { x: sprite.x + sprite.width, y: sprite.y - 1 }) === 1) {
                         sprite.y = sprite.y
                     } else {
                         sprite.y = sprite.y - 1;
                     }
                 }
-                if (keyPressed('down')) {
-                    if(tileEngine.tileAtLayer("collision", {x: sprite.x, y: sprite.y + sprite.height + 1}) === 1 ||
-                    tileEngine.tileAtLayer("collision", {x: sprite.x + sprite.width, y: sprite.y + sprite.height + 1}) === 1) {
+                if (keyPressed('down') || keyPressed("s")) {
+                    if (tileEngine.tileAtLayer("collision", { x: sprite.x, y: sprite.y + sprite.height + 1 }) === 1 ||
+                        tileEngine.tileAtLayer("collision", { x: sprite.x + sprite.width, y: sprite.y + sprite.height + 1 }) === 1) {
                         sprite.y = sprite.y
                     } else {
                         sprite.y = sprite.y + 1;
@@ -109,13 +162,16 @@
                 // Non need to render the collision layer
                 tileEngine.renderLayer("ground");
                 sprite.render();
+                title.render();
+
             }
         });
 
         // Load key binding
         initKeys();
         // start the game
-        loop.start();    
+        loop.start();
     }
 </script>
+
 </html>
