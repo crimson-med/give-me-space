@@ -60,6 +60,13 @@
     }
 </script>
 <script>
+    // Declarations
+    let gameState = {
+        highScore: 0,
+        health: 2,
+    }
+</script>
+<script>
     // Generate a random map
     let generateMap = mapGenerator(160)
     // Friendly display of mapGenerator tiles
@@ -79,6 +86,24 @@
         dx: 8,          // move the sprite 2px to the right every frame
         dy: 8          // move the sprite 2px to the right every frame
     });
+
+    let heart = Sprite({
+        x: 25,        // starting x,y position of the sprite
+        y: 150,
+        anchor: { x: 0, y: 0 },
+        color: 'pink',  // fill color of the sprite rectangle
+        width: 16,     // width and height of the sprite rectangle
+        height: 16,
+    });
+    let heartEmpty = Sprite({
+        x: 25,        // starting x,y position of the sprite
+        y: 150,
+        anchor: { x: 0, y: 0 },
+        color: 'white',  // fill color of the sprite rectangle
+        width: 16,     // width and height of the sprite rectangle
+        height: 16,
+    });
+    let lifeCollection = []
     // Set our title
     let title = Text({
         text: 'GIVE ME SPACE!',
@@ -86,6 +111,15 @@
         color: 'white',
         x: 100,
         y: 200,
+        anchor: { x: 0.5, y: 0.5 },
+        textAlign: 'center'
+    });
+    let score = Text({
+        text: 'Score:',
+        font: '20px Luminari, fantasy',
+        color: 'white',
+        x: 50 + 16 * 3,
+        y: 150,
         anchor: { x: 0.5, y: 0.5 },
         textAlign: 'center'
     });
@@ -156,13 +190,40 @@
                         sprite.y = sprite.y + 1;
                     }
                 }
-
+                lifeCollection = []
+                for (let index = 0; index < 3; index++) {
+                    if (index < gameState.health) {
+                        lifeCollection.push(Sprite({
+                            x: 15 + (16*index) + (5*index),        // starting x,y position of the sprite
+                            y: 140,
+                            anchor: { x: 0, y: 0 },
+                            color: 'pink',  // fill color of the sprite rectangle
+                            width: 16,     // width and height of the sprite rectangle
+                            height: 16,
+                        }))
+                    } else {
+                        lifeCollection.push(Sprite({
+                            x: 15 + (16*index) + (5*index),       // starting x,y position of the sprite
+                            y: 140,
+                            anchor: { x: 0, y: 0 },
+                            color: 'white',  // fill color of the sprite rectangle
+                            width: 16,     // width and height of the sprite rectangle
+                            height: 16,
+                        }))
+                    }
+                }
             },
             render: () => { // render the game state
                 // Non need to render the collision layer
                 tileEngine.renderLayer("ground");
                 sprite.render();
                 title.render();
+                score.render();
+                lifeCollection.forEach(element => {
+                    //console.log(element)
+                element.render();
+                });
+                
 
             }
         });
